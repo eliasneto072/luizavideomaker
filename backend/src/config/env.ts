@@ -36,6 +36,22 @@ const envSchema = z.object({
     .string()
     .min(6, 'ADMIN_PASSWORD deve ter ao menos 6 caracteres')
     .default('mudar-esta-senha'),
+
+  // Storage de arquivos (Cloudflare R2 — compatível com S3)
+  R2_ACCOUNT_ID: z
+    .string()
+    .min(1, 'R2_ACCOUNT_ID é obrigatória'),
+  R2_ACCESS_KEY_ID: z
+    .string()
+    .min(1, 'R2_ACCESS_KEY_ID é obrigatória'),
+  R2_SECRET_ACCESS_KEY: z
+    .string()
+    .min(1, 'R2_SECRET_ACCESS_KEY é obrigatória'),
+  R2_BUCKET_NAME: z
+    .string()
+    .min(1, 'R2_BUCKET_NAME é obrigatória'),
+  // Tempo de validade (em segundos) das URLs assinadas de download.
+  R2_SIGNED_URL_EXPIRES: z.coerce.number().default(900), // 15 minutos
 });
 
 const parsed = envSchema.safeParse(process.env);
