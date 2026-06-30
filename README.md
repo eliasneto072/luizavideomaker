@@ -114,9 +114,37 @@ docker compose exec backend sh        # entrar no container do backend
 
 ---
 
+## Documentação
+
+A documentação técnica detalhada está na pasta [`docs/`](./docs):
+
+- **[API.md](./docs/API.md)** — referência completa dos endpoints, com
+  exemplos de requisição e resposta.
+- **[ARQUITETURA.md](./docs/ARQUITETURA.md)** — decisões técnicas,
+  camadas, padrões e modelo de dados.
+
+---
+
 ## Status
 
-🚧 **Em desenvolvimento** — acompanhe o progresso pelos commits.
+### Backend
+
+- [x] Setup do monorepo e configuração base
+- [x] Banco de dados e Prisma (4 modelos)
+- [x] Containerização com Docker
+- [x] Autenticação da administradora (JWT + bcrypt)
+- [x] Módulo de mensagens de contato
+- [x] Seed (conta da Luiza + dados de exemplo)
+- [x] Documentação técnica
+
+### Roadmap
+
+- [ ] Módulo de portfólio (gestão pelo painel)
+- [ ] Módulo de depoimentos (gestão pelo painel)
+- [ ] Upload de imagens/vídeos
+- [ ] Frontend — site público (portfólio)
+- [ ] Frontend — painel administrativo
+- [ ] Deploy em produção
 
 ---
 
