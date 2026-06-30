@@ -1,0 +1,26 @@
+# ===========================================
+#  Dockerfile de Desenvolvimento — Backend
+#  Mantém as dependências completas e roda com
+#  hot-reload (tsx watch) para refletir as
+#  alterações no código em tempo real.
+# ===========================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Instala todas as dependências (inclui devDependencies)
+COPY package*.json ./
+RUN npm install
+
+# Copia o schema do Prisma e gera o client
+COPY prisma ./prisma
+RUN npx prisma generate
+
+# O código-fonte é montado via volume no docker-compose.dev,
+# então não é copiado aqui (permite hot-reload).
+
+EXPOSE 3333
+
+# Aplica migrations e sobe a API com hot-reload
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
