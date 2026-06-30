@@ -91,3 +91,61 @@ model Testimonial {
   @@index([active, order])
   @@map("testimonials")
 }
+
+// ===========================================
+//  GALERIA (entrega de material ao cliente)
+// ===========================================
+// Galeria privada criada pela Luiza para entregar fotos e vídeos a um
+// cliente. O acesso é feito por link único + senha, sem necessidade de
+// conta. Cada galeria expira após um período (padrão: 60 dias).
+model Gallery {
+  id           String        @id @default(uuid())
+  title        String // ex.: "Casamento Marina & João"
+  clientName   String        @map("client_name") // nome do cliente
+  slug         String        @unique // código único do link (ex.: x7k9m2p4)
+  passwordHash String        @map("password_hash") // senha da galeria (hash bcrypt)
+  coverImage   String?       @map("cover_image") // imagem de capa (opcional)
+  status       GalleryStatus @default(ACTIVE)
+  expiresAt    DateTime      @map("expires_at") // data de expiração
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  files GalleryFile[] // arquivos pertencentes à galeria
+
+  @@index([slug])
+  @@index([status, expiresAt])
+  @@map("galleries")
+}
+
+enum GalleryStatus {
+  ACTIVE // disponível para o cliente
+  EXPIRED // passou da data de expiração
+  ARCHIVED // arquivada manualmente pela Luiza
+}
+
+// Arquivo (foto ou vídeo) pertencente a uma galeria.
+// Os binários ficam no Cloudflare R2; aqui guardamos apenas os
+// metadados e as chaves de acesso ao storage.
+model GalleryFile {
+  id        String  @id @default(uuid())
+  galleryId String  @map("gallery_id")
+  gallery   Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+
+  type         FileType
+  fileName     String  @map("file_name") // nome original do arquivo
+  storageKey   String  @map("storage_key") // chave do objeto no R2
+  thumbnailKey String? @map("thumbnail_key") // chave da miniatura (fotos)
+  sizeBytes    BigInt  @map("size_bytes") // tamanho em bytes
+  width        Int? // largura (para layout do grid)
+  height       Int? // altura
+  order        Int     @default(0) // ordem de exibição
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([galleryId])
+  @@map("gallery_files")
+}
+
+enum FileType {
+  PHOTO
+  VIDEO
+}
