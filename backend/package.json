@@ -1,7 +1,7 @@
 {
   "name": "luizavideomaker-backend",
   "version": "1.0.0",
-  "description": "API do site profissional da Luiza (Origem Creative) — videomaker & storymaker",
+  "description": "API do site profissional da Luiza — videomaker & storymaker em João Pessoa",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -21,7 +21,7 @@
     "typescript",
     "prisma"
   ],
-  "author": "Origem Creative",
+  "author": "Luiza Videomaker",
   "license": "MIT",
   "prisma": {
     "seed": "tsx prisma/seed.ts"

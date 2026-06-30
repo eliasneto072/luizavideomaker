@@ -1,26 +1,31 @@
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { env } from './config/env';
+import { prisma } from './config/prisma';
 
 /**
  * Ponto de entrada da aplicação.
  *
- * Nesta etapa inicial, sobe um servidor Express básico com um
- * health-check. As rotas dos módulos (auth, messages, etc.) e os
- * middlewares de erro serão adicionados nos próximos passos.
+ * Sobe o servidor Express com as configurações básicas e um
+ * health-check que também verifica a conexão com o banco de dados.
+ * As rotas dos módulos e o middleware de erro serão adicionados
+ * nos próximos passos.
  */
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: env.FRONTEND_URL }));
 app.use(express.json());
 
-// Health-check — confirma que a API está no ar
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'luizavideomaker-api' });
+// Health-check — confirma que a API e o banco estão no ar
+app.get('/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', service: 'luizavideomaker-api', database: 'connected' });
+  } catch {
+    res.status(503).json({ status: 'error', database: 'disconnected' });
+  }
 });
 
-const PORT = process.env.PORT ?? 3333;
-
-app.listen(PORT, () => {
-  console.log(`🚀 API rodando em http://localhost:${PORT}`);
+app.listen(env.PORT, () => {
+  console.log(`🚀 API rodando em ${env.API_URL}`);
 });

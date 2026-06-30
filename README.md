@@ -1,4 +1,4 @@
-# Origem Creative — Site da Luiza
+# Luiza Videomaker — Site Profissional
 
 API e site profissional da **Luiza**, videomaker & storymaker em João Pessoa — PB.
 
@@ -73,4 +73,4 @@ npm run dev                # sobe a API em http://localhost:3333
 
 ---
 
-Desenvolvido para a **Origem Creative**.
+Desenvolvido para a **Luiza Videomaker**.

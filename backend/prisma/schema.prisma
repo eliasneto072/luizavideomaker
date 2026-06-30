@@ -1,0 +1,93 @@
+// Prisma schema — Luiza Videomaker
+// Documentação: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================
+//  USUÁRIO (acesso ao painel administrativo)
+// ===========================================
+// Conta da Luiza para acessar o painel e gerenciar o site.
+// O site é público; apenas o painel exige autenticação.
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String // hash bcrypt — nunca em texto puro
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+}
+
+// ===========================================
+//  MENSAGEM (formulário "Conta sua história")
+// ===========================================
+// Mensagens enviadas pelos visitantes do site através do
+// formulário de contato. Lidas pela Luiza no painel.
+model Message {
+  id        String        @id @default(uuid())
+  name      String // nome de quem enviou
+  whatsapp  String? // telefone para retorno (opcional)
+  content   String // o conteúdo da mensagem
+  status    MessageStatus @default(UNREAD)
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([status])
+  @@map("messages")
+}
+
+enum MessageStatus {
+  UNREAD // ainda não lida
+  READ // já lida
+  ARCHIVED // arquivada
+}
+
+// ===========================================
+//  PORTFÓLIO (trabalhos em destaque)
+// ===========================================
+// Trabalhos exibidos no site, gerenciáveis pelo painel.
+// Permite trocar vídeos e reordenar sem mexer no código.
+model Portfolio {
+  id         String   @id @default(uuid())
+  title      String // título do trabalho
+  category   String // Casamento, Imobiliário, Petshop, etc.
+  videoUrl   String?  @map("video_url") // link do reel/vídeo
+  coverImage String?  @map("cover_image") // imagem de capa
+  order      Int      @default(0) // ordem de exibição
+  active     Boolean  @default(true) // controla se aparece no site
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([active, order])
+  @@map("portfolio")
+}
+
+// ===========================================
+//  DEPOIMENTO (feedbacks de clientes)
+// ===========================================
+// Depoimentos exibidos no site, gerenciáveis pelo painel.
+model Testimonial {
+  id        String   @id @default(uuid())
+  author    String // nome do cliente
+  role      String? // "Noivos", "Petshop parceiro", etc.
+  content   String // o depoimento
+  order     Int      @default(0) // ordem de exibição
+  active    Boolean  @default(true) // controla se aparece no site
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([active, order])
+  @@map("testimonials")
+}
