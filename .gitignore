@@ -1,0 +1,62 @@
+# ===========================================
+#  Dependências
+# ===========================================
+node_modules/
+.pnp
+.pnp.js
+
+# ===========================================
+#  Variáveis de ambiente (NUNCA versionar)
+# ===========================================
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# ===========================================
+#  Build / Compilação
+# ===========================================
+dist/
+build/
+*.tsbuildinfo
+
+# ===========================================
+#  Prisma
+# ===========================================
+# (as migrations DEVEM ser versionadas; o client gerado não)
+backend/src/generated/
+prisma/*.db
+
+# ===========================================
+#  Logs
+# ===========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===========================================
+#  Uploads locais (imagens enviadas em dev)
+# ===========================================
+backend/uploads/
+uploads/
+
+# ===========================================
+#  Editor / Sistema
+# ===========================================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# ===========================================
+#  Cache
+# ===========================================
+.cache/
+.npm/
+.eslintcache
