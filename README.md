@@ -62,10 +62,22 @@ routes → controller → service → repository → Prisma
 cd backend
 npm install
 cp .env.example .env       # preencha as variáveis
+npm run prisma:generate    # gera o Prisma Client
 npm run prisma:migrate     # cria as tabelas
 npm run db:seed            # cria a conta da Luiza
 npm run dev                # sobe a API em http://localhost:3333
 ```
+
+#### Acesso ao painel
+
+Após o seed, a conta de acesso ao painel usa as credenciais definidas
+no `.env` (`ADMIN_EMAIL` e `ADMIN_PASSWORD`). Os valores padrão são:
+
+- **E-mail:** `luiza@luizavideomaker.com`
+- **Senha:** a definida em `ADMIN_PASSWORD`
+
+> **Importante:** defina uma senha forte em `ADMIN_PASSWORD` antes de
+> colocar o site no ar.
 
 ### Opção B — Docker (recomendado)
 
