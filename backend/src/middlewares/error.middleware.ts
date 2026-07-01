@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { MulterError } from 'multer';
 import { AppError } from '../shared/errors/AppError';
 import { httpResponse } from '../shared/http/httpResponse';
 import { env } from '../config/env';
@@ -9,6 +10,7 @@ import { env } from '../config/env';
  *
  * Centraliza a resposta de qualquer erro lançado na aplicação:
  *   - ZodError      → 400 com a lista de campos inválidos
+ *   - MulterError   → 400 com mensagem amigável (ex.: arquivo grande)
  *   - AppError      → status definido no próprio erro (erro de negócio)
  *   - Erro genérico → 500 (logado no servidor; detalhe ocultado em produção)
  *
@@ -24,6 +26,15 @@ export function errorMiddleware(
   if (error instanceof ZodError) {
     const errors = error.flatten().fieldErrors;
     return httpResponse.error(res, 400, 'Dados inválidos.', errors);
+  }
+
+  // Erro de upload (Multer)
+  if (error instanceof MulterError) {
+    const message =
+      error.code === 'LIMIT_FILE_SIZE'
+        ? 'Arquivo excede o tamanho máximo permitido.'
+        : 'Falha no upload do arquivo.';
+    return httpResponse.error(res, 400, message);
   }
 
   // Erro de negócio esperado
