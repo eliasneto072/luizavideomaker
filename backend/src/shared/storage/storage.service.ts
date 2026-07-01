@@ -85,6 +85,28 @@ export const storageService = {
   },
 
   /**
+   * Baixa o conteúdo de um arquivo do R2 como buffer.
+   *
+   * Usado, por exemplo, para montar o ZIP de download em lote no
+   * servidor. Para downloads diretos ao cliente, prefira as URLs
+   * assinadas (getDownloadUrl), que não passam pelo servidor.
+   *
+   * @param key  Caminho do objeto no bucket.
+   * @returns    Buffer com o conteúdo do arquivo.
+   */
+  async getObjectBuffer(key: string): Promise<Buffer> {
+    const response = await r2Client.send(
+      new GetObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: key,
+      }),
+    );
+
+    const bytes = await response.Body!.transformToByteArray();
+    return Buffer.from(bytes);
+  },
+
+  /**
    * Remove um único arquivo do R2.
    *
    * @param key  Caminho do objeto a remover.

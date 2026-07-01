@@ -13,6 +13,7 @@ import { asyncHandler } from '../../shared/http/asyncHandler';
  * Protegidas (exigem o token emitido no unlock):
  *   GET  /api/g/:slug/files            lista os arquivos
  *   GET  /api/g/:slug/download/:fileId link temporário de download
+ *   GET  /api/g/:slug/download-all     ZIP com todas as fotos
  *
  * O prefixo curto `/g` gera links limpos e fáceis de compartilhar.
  */
@@ -33,6 +34,11 @@ galleriesPublicRoutes.get(
   '/:slug/files',
   galleryAuthMiddleware,
   asyncHandler(galleriesPublicController.listFiles),
+);
+galleriesPublicRoutes.get(
+  '/:slug/download-all',
+  galleryAuthMiddleware,
+  asyncHandler(galleriesPublicController.downloadAll),
 );
 galleriesPublicRoutes.get(
   '/:slug/download/:fileId',

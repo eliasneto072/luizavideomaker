@@ -6,6 +6,7 @@ import {
 } from './galleries.schema';
 import { passwordUtils } from '../../shared/utils/password';
 import { generateSlug } from '../../shared/utils/slug';
+import { imageUtils } from '../../shared/utils/image';
 import { storageService } from '../../shared/storage/storage.service';
 import { AppError } from '../../shared/errors/AppError';
 
@@ -122,8 +123,10 @@ export const galleriesService = {
 
   /**
    * Faz upload de um arquivo para uma galeria.
-   * Envia o binário ao R2 e registra os metadados no banco. A geração
-   * de miniaturas será adicionada em etapa posterior.
+   *
+   * Para fotos: gera uma miniatura (thumbnail) leve e extrai as
+   * dimensões. Vídeos são enviados sem processamento de imagem. O
+   * binário vai para o R2 e os metadados para o banco.
    *
    * @param galleryId  Galeria de destino.
    * @param file       Arquivo recebido (multer): buffer, nome e mimetype.
@@ -134,17 +137,38 @@ export const galleriesService = {
   ) {
     const gallery = await this.getById(galleryId);
 
-    // Determina o tipo a partir do mimetype.
-    const type = file.mimetype.startsWith('video/')
-      ? FileType.VIDEO
-      : FileType.PHOTO;
+    const isVideo = file.mimetype.startsWith('video/');
+    const type = isVideo ? FileType.VIDEO : FileType.PHOTO;
 
-    // Monta uma chave única e organizada no bucket.
+    // Base de chave única e organizada no bucket.
     const safeName = file.originalname.replace(/\s+/g, '_');
-    const storageKey = `galleries/${gallery.id}/${generateSlug()}-${safeName}`;
+    const baseKey = `galleries/${gallery.id}/${generateSlug()}`;
+    const storageKey = `${baseKey}-${safeName}`;
 
-    // Envia o binário ao R2.
+    // Envia o arquivo original ao R2.
     await storageService.upload(storageKey, file.buffer, file.mimetype);
+
+    // Para fotos: gera miniatura e extrai dimensões.
+    let thumbnailKey: string | null = null;
+    let width: number | null = null;
+    let height: number | null = null;
+
+    if (!isVideo) {
+      const dimensions = await imageUtils.getDimensions(file.buffer);
+      if (dimensions) {
+        width = dimensions.width;
+        height = dimensions.height;
+      }
+
+      try {
+        const thumbBuffer = await imageUtils.generateThumbnail(file.buffer);
+        thumbnailKey = `${baseKey}-thumb.jpg`;
+        await storageService.upload(thumbnailKey, thumbBuffer, 'image/jpeg');
+      } catch {
+        // Se a miniatura falhar, segue sem ela (a galeria usa o original).
+        thumbnailKey = null;
+      }
+    }
 
     // Define a ordem (após os arquivos já existentes).
     const order = await galleriesRepository.countFiles(galleryId);
@@ -155,7 +179,10 @@ export const galleriesService = {
       type,
       fileName: file.originalname,
       storageKey,
+      thumbnailKey,
       sizeBytes: BigInt(file.size),
+      width,
+      height,
       order,
     });
 

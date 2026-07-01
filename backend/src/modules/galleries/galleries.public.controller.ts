@@ -37,4 +37,19 @@ export const galleriesPublicController = {
     );
     return httpResponse.ok(res, result);
   },
+
+  /** GET /api/g/:slug/download-all — baixa todas as fotos em um ZIP. */
+  async downloadAll(req: Request, res: Response) {
+    const { slug } = req.params;
+
+    // Define os cabeçalhos do arquivo ZIP antes de transmitir.
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="galeria-${slug}.zip"`,
+    );
+
+    // O service escreve o ZIP diretamente no stream de resposta.
+    await galleriesPublicService.streamPhotosZip(slug, res);
+  },
 };

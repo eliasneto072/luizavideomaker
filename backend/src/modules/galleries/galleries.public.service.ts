@@ -1,4 +1,5 @@
-import { GalleryStatus } from '@prisma/client';
+import { GalleryStatus, FileType } from '@prisma/client';
+import archiver from 'archiver';
 import { galleriesRepository } from './galleries.repository';
 import { galleryAccess } from './gallery-access.util';
 import { UnlockGalleryInput } from './galleries.public.schema';
@@ -133,5 +134,37 @@ export const galleriesPublicService = {
     );
 
     return { url, fileName: file.fileName };
+  },
+
+  /**
+   * Monta um ZIP com todas as FOTOS da galeria e o transmite para a
+   * resposta HTTP (stream), evitando carregar tudo em memória de uma
+   * vez. Vídeos são propositalmente excluídos do ZIP — por serem
+   * grandes, devem ser baixados individualmente.
+   *
+   * @param slug  Slug da galeria.
+   * @param res   Stream de resposta (Express) onde o ZIP é escrito.
+   */
+  async streamPhotosZip(slug: string, res: NodeJS.WritableStream) {
+    const gallery = await this.ensureAccessible(slug);
+
+    const photos = gallery.files.filter((f) => f.type === FileType.PHOTO);
+
+    if (photos.length === 0) {
+      throw new AppError('Não há fotos para baixar nesta galeria.', 404);
+    }
+
+    // Cria o arquivador e o direciona para a resposta.
+    const archive = archiver('zip', { zlib: { level: 6 } });
+    archive.pipe(res);
+
+    // Adiciona cada foto ao ZIP, buscando o conteúdo do R2 sob demanda.
+    for (const photo of photos) {
+      const buffer = await storageService.getObjectBuffer(photo.storageKey);
+      archive.append(buffer, { name: photo.fileName });
+    }
+
+    // Finaliza o ZIP (dispara o fim do stream).
+    await archive.finalize();
   },
 };
