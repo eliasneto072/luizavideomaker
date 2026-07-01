@@ -130,20 +130,24 @@ A documentação técnica detalhada está na pasta [`docs/`](./docs):
 ### Backend
 
 - [x] Setup do monorepo e configuração base
-- [x] Banco de dados e Prisma (4 modelos)
+- [x] Banco de dados e Prisma (6 modelos)
 - [x] Containerização com Docker
 - [x] Autenticação da administradora (JWT + bcrypt)
 - [x] Módulo de mensagens de contato
 - [x] Seed (conta da Luiza + dados de exemplo)
+- [x] Galerias de entrega (upload, acesso por senha, download, ZIP)
+- [x] Armazenamento em Cloudflare R2 com URLs assinadas
+- [x] Miniaturas automáticas (Sharp)
+- [x] Expiração automática de galerias
 - [x] Documentação técnica
 
 ### Roadmap
 
 - [ ] Módulo de portfólio (gestão pelo painel)
 - [ ] Módulo de depoimentos (gestão pelo painel)
-- [ ] Upload de imagens/vídeos
 - [ ] Frontend — site público (portfólio)
 - [ ] Frontend — painel administrativo
+- [ ] Frontend — páginas da galeria (cliente)
 - [ ] Deploy em produção
 
 ---

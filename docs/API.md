@@ -21,6 +21,22 @@ Referência dos endpoints da API da **Luiza Videomaker**.
   - [Detalhe da mensagem](#get-messagesid)
   - [Atualizar status](#patch-messagesid)
   - [Excluir mensagem](#delete-messagesid)
+- [Galerias — Painel (privado)](#galerias--painel-privado)
+  - [Criar galeria](#post-galleries)
+  - [Listar galerias](#get-galleries)
+  - [Detalhe da galeria](#get-galleriesid)
+  - [Editar / renovar](#patch-galleriesid)
+  - [Excluir galeria](#delete-galleriesid)
+  - [Enviar arquivo](#post-galleriesidfiles)
+  - [Remover arquivo](#delete-galleriesidfilesfileid)
+- [Galerias — Acesso do cliente (público)](#galerias--acesso-do-cliente-público)
+  - [Informações da galeria](#get-gslug)
+  - [Desbloquear com senha](#post-gslugunlock)
+  - [Listar arquivos](#get-gslugfiles)
+  - [Baixar um arquivo](#get-gslugdownloadfileid)
+  - [Baixar todas as fotos (ZIP)](#get-gslugdownload-all)
+- [Manutenção](#manutenção)
+  - [Limpar galerias expiradas](#post-maintenancecleanup-galleries)
 - [Códigos de status](#códigos-de-status)
 
 ---
@@ -340,6 +356,224 @@ Authorization: Bearer <token>
 
 ---
 
+## Galerias — Painel (privado)
+
+Gestão das galerias de entrega pela Luiza. Todas as rotas exigem
+autenticação (token de admin).
+
+### `POST /galleries`
+
+**Privada.** Cria uma galeria com link único e senha.
+
+**Corpo da requisição:**
+
+| Campo           | Tipo   | Obrigatório | Descrição                                  |
+| --------------- | ------ | ----------- | ------------------------------------------ |
+| `title`         | string | Sim         | Título da galeria (mín. 2)                 |
+| `clientName`    | string | Sim         | Nome do cliente (mín. 2)                   |
+| `password`      | string | Sim         | Senha de acesso do cliente (mín. 4)        |
+| `expiresInDays` | number | Não         | Validade em dias (padrão: 60)              |
+
+**Exemplo:**
+
+```http
+POST /api/galleries
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Casamento Marina & João",
+  "clientName": "Marina",
+  "password": "marina2026"
+}
+```
+
+**Resposta `201 Created`:** dados da galeria, incluindo o `slug` gerado
+(usado no link) e a `expiresAt`.
+
+---
+
+### `GET /galleries`
+
+**Privada.** Lista todas as galerias, da mais recente para a mais
+antiga, com a contagem de arquivos de cada uma.
+
+---
+
+### `GET /galleries/:id`
+
+**Privada.** Detalha uma galeria e seus arquivos.
+
+**Erros:** `404` — galeria não encontrada.
+
+---
+
+### `PATCH /galleries/:id`
+
+**Privada.** Edita a galeria e/ou renova a validade.
+
+**Corpo (todos opcionais):**
+
+| Campo          | Tipo   | Descrição                                    |
+| -------------- | ------ | -------------------------------------------- |
+| `title`        | string | Novo título                                  |
+| `clientName`   | string | Novo nome do cliente                         |
+| `password`     | string | Nova senha (re-hash)                         |
+| `status`       | string | `ACTIVE`, `EXPIRED` ou `ARCHIVED`            |
+| `renewForDays` | number | Renova a validade por N dias a partir de agora |
+
+---
+
+### `DELETE /galleries/:id`
+
+**Privada.** Remove a galeria e todos os seus arquivos do R2.
+
+**Resposta `204 No Content`.**
+
+---
+
+### `POST /galleries/:id/files`
+
+**Privada.** Envia um arquivo (foto ou vídeo) para a galeria. Fotos
+geram miniatura automaticamente.
+
+**Requisição:** `multipart/form-data` com o campo `file`.
+
+```http
+POST /api/galleries/<id>/files
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+file: <arquivo binário>
+```
+
+**Resposta `201 Created`:** metadados do arquivo registrado.
+
+**Erros:** `400` — nenhum arquivo enviado, tipo inválido ou tamanho
+excedido.
+
+---
+
+### `DELETE /galleries/:id/files/:fileId`
+
+**Privada.** Remove um arquivo específico (do R2 e do banco).
+
+**Resposta `204 No Content`.**
+
+---
+
+## Galerias — Acesso do cliente (público)
+
+Fluxo do cliente a partir do link recebido. O prefixo curto `/g` gera
+links fáceis de compartilhar.
+
+### `GET /g/:slug`
+
+**Pública.** Informações básicas para a tela de senha (título, cliente,
+validade e total de arquivos). Não expõe os arquivos.
+
+**Erros:** `404` — não encontrada. `410` — arquivada ou expirada.
+
+---
+
+### `POST /g/:slug/unlock`
+
+**Pública.** Confere a senha e, se correta, retorna um token de acesso
+temporário (válido por 6h) específico da galeria.
+
+**Corpo:**
+
+| Campo      | Tipo   | Obrigatório | Descrição            |
+| ---------- | ------ | ----------- | -------------------- |
+| `password` | string | Sim         | Senha da galeria     |
+
+**Resposta `200 OK`:**
+
+```json
+{
+  "success": true,
+  "message": "Galeria desbloqueada.",
+  "data": {
+    "token": "eyJhbGci...",
+    "gallery": { "title": "...", "clientName": "...", "expiresAt": "..." }
+  }
+}
+```
+
+**Erros:** `401` — senha incorreta. `410` — expirada.
+
+---
+
+### `GET /g/:slug/files`
+
+**Protegida** (token da galeria). Lista os arquivos com URLs temporárias
+de visualização e de miniatura.
+
+**Cabeçalhos:** `Authorization: Bearer <token-da-galeria>`
+
+**Resposta `200 OK`:** título, cliente, validade e a lista de arquivos,
+cada um com `url`, `thumbnailUrl`, `type`, `fileName` e dimensões.
+
+---
+
+### `GET /g/:slug/download/:fileId`
+
+**Protegida** (token da galeria). Retorna uma URL temporária de download
+de um arquivo, já com o nome original.
+
+**Resposta `200 OK`:**
+
+```json
+{
+  "success": true,
+  "data": { "url": "https://...", "fileName": "foto.jpg" }
+}
+```
+
+---
+
+### `GET /g/:slug/download-all`
+
+**Protegida** (token da galeria). Baixa **todas as fotos** da galeria em
+um único arquivo ZIP (vídeos não são incluídos). A resposta é o próprio
+arquivo (`application/zip`), transmitido como stream.
+
+**Erros:** `404` — não há fotos para baixar.
+
+---
+
+## Manutenção
+
+Tarefas de sistema acionadas por um agendador externo (cron).
+
+### `POST /maintenance/cleanup-galleries`
+
+Expira as galerias vencidas e remove seus arquivos do R2. Protegida por
+um segredo próprio, não pelo login da Luiza.
+
+**Cabeçalhos:**
+
+```http
+x-cleanup-secret: <CLEANUP_SECRET>
+```
+
+**Resposta `200 OK`:**
+
+```json
+{
+  "success": true,
+  "message": "Limpeza concluída: 2 galeria(s) expirada(s).",
+  "data": { "galleriesExpired": 2, "filesRemoved": 640 }
+}
+```
+
+**Erros:**
+
+- `401` — segredo ausente ou incorreto.
+- `503` — limpeza não configurada (sem `CLEANUP_SECRET`).
+
+---
+
 ## Códigos de status
 
 | Código | Significado                                        |
@@ -348,9 +582,12 @@ Authorization: Bearer <token>
 | `201`  | Recurso criado                                     |
 | `204`  | Sucesso sem conteúdo de retorno                    |
 | `400`  | Requisição inválida (erro de validação)            |
-| `401`  | Não autenticado (token ausente/inválido)           |
+| `401`  | Não autenticado (token/senha ausente ou inválido)  |
+| `403`  | Token não corresponde ao recurso                   |
 | `404`  | Recurso não encontrado                             |
+| `410`  | Recurso não disponível (galeria expirada/arquivada)|
 | `500`  | Erro interno do servidor                           |
+| `503`  | Recurso indisponível (tarefa não configurada)      |
 
 ---
 
