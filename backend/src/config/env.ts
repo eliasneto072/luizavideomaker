@@ -52,6 +52,20 @@ const envSchema = z.object({
     .min(1, 'R2_BUCKET_NAME é obrigatória'),
   // Tempo de validade (em segundos) das URLs assinadas de download.
   R2_SIGNED_URL_EXPIRES: z.coerce.number().default(900), // 15 minutos
+
+  // Limpeza automática de galerias expiradas
+  // Segredo exigido para acionar o endpoint de limpeza (via cron externo).
+  CLEANUP_SECRET: z
+    .string()
+    .min(8, 'CLEANUP_SECRET deve ter ao menos 8 caracteres')
+    .optional(),
+  // Se "true", agenda a limpeza internamente (setInterval), além do
+  // endpoint. Útil quando não há um cron externo configurado.
+  CLEANUP_INTERVAL_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false'),
+  // Intervalo (em horas) da limpeza interna, quando habilitada.
+  CLEANUP_INTERVAL_HOURS: z.coerce.number().positive().default(12),
 });
 
 const parsed = envSchema.safeParse(process.env);

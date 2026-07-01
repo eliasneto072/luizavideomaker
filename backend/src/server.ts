@@ -4,12 +4,14 @@ import { env } from './config/env';
 import { prisma } from './config/prisma';
 import { routes } from './routes';
 import { errorMiddleware } from './middlewares/error.middleware';
+import { startScheduler } from './config/scheduler';
 
 /**
  * Ponto de entrada da aplicação.
  *
  * Configura o Express, registra as rotas da API sob o prefixo `/api`
- * e o middleware global de erros (sempre por último).
+ * e o middleware global de erros (sempre por último). Também inicia o
+ * agendador interno de tarefas, quando habilitado.
  */
 const app = express();
 
@@ -34,4 +36,6 @@ app.use(errorMiddleware);
 
 app.listen(env.PORT, () => {
   console.log(`🚀 API rodando em ${env.API_URL}`);
+  // Inicia o agendador interno (se CLEANUP_INTERVAL_ENABLED = true)
+  startScheduler();
 });
